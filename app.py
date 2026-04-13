@@ -104,13 +104,23 @@ st.markdown(
         padding-top: 1.4rem;
         max-width: 1400px;
     }
+    
+    /* 사이드바 배경 설정 */
     [data-testid="stSidebar"] {
         background-color: #191919;
     }
-    /* 사이드바 내부의 모든 라벨과 텍스트 색상을 밝게 고정 */
-    [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
+    
+    /* 사이드바 내부의 모든 텍스트(라벨, 설명, 코드 수치 등)를 하얗게 고정 */
+    [data-testid="stSidebar"] *, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] code {
         color: #F2F2F2 !important;
+        -webkit-text-fill-color: #F2F2F2 !important;
     }
+
+    /* 검수 결과 텍스트 스타일 */
     .check-pass {
         font-size: 2rem;
         font-weight: 800;
