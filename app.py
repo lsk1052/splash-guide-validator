@@ -184,27 +184,37 @@ uploaded_file = st.file_uploader(
 if uploaded_file is None:
     st.info("좌측에서 OS를 선택한 뒤 이미지를 업로드하면 자동으로 검수가 진행됩니다.")
 else:
+    # 파일 용량 체크
+    file_size_kb = uploaded_file.size / 1024  # 바이트를 KB로 변환
+    SIZE_LIMIT_KB = 500
+    is_size_valid = file_size_kb <= SIZE_LIMIT_KB
+
+    # 이미지 규격 체크
     image = Image.open(uploaded_file).convert("RGB")
     actual_w, actual_h = image.size
     expected_w, expected_h = OS_SPECS[selected_os]["size"]
+    is_dim_valid = (actual_w, actual_h) == (expected_w, expected_h)
 
-    is_valid = (actual_w, actual_h) == (expected_w, expected_h)
-    if is_valid:
-        st.markdown('<div class="check-pass">✅ 규격 통과</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="check-fail">❌ 규격 불일치</div>', unsafe_allow_html=True)
+    # 규격/용량 결과를 나란히 표시
+    col1, col2 = st.columns(2)
 
-    st.markdown(
-        f"""
-        <div class="check-detail">
-        선택 OS: <b>{selected_os}</b> &nbsp;&nbsp;|&nbsp;&nbsp;
-        기준 규격: <b>{expected_w} x {expected_h}px</b> &nbsp;&nbsp;|&nbsp;&nbsp;
-        업로드 이미지: <b>{actual_w} x {actual_h}px</b>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with col1:
+        if is_dim_valid:
+            st.markdown('<div class="check-pass">✅ 규격 통과</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="check-fail">❌ 규격 불일치</div>', unsafe_allow_html=True)
+        st.markdown(f"**규격:** {actual_w}x{actual_h}px (기준: {expected_w}x{expected_h}px)")
 
+    with col2:
+        if is_size_valid:
+            st.markdown('<div class="check-pass">✅ 용량 적합</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="check-fail">❌ 용량 초과</div>', unsafe_allow_html=True)
+        st.markdown(f"**용량:** {file_size_kb:.1f} KB (기준: {SIZE_LIMIT_KB} KB 이하)")
+
+    st.divider()  # 결과와 이미지 사이 구분선
+
+    # 가이드 오버레이 생성 및 출력
     result_image = apply_guide_overlay(image, selected_os)
 
     left, center, right = st.columns([1, 7, 1])
