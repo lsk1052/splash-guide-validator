@@ -11,7 +11,7 @@ st.set_page_config(
 
 # 2. Gemini API 설정 (Secrets에서 키를 가져옵니다)
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel('gemini-2.0-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 def check_ad_text(image):
     try:
