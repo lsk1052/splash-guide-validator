@@ -12,11 +12,9 @@ st.set_page_config(
 
 # 2. OCR 모델 캐싱 및 로드
 @st.cache_resource
-def get_ocr_reader():
-    return easyocr.Reader(['ko', 'en'], gpu=False)
-
 def check_ad_text(image):
-    # 함수 안으로 모델 로드를 옮깁니다. (이미지가 업로드되었을 때만 실행됨)
+    # 이미지가 업로드되어 이 함수가 실행될 때만 모델을 로드합니다.
+    # 이렇게 해야 앱이 시작될 때 뻗지 않습니다.
     reader = get_ocr_reader() 
     
     img_np = np.array(image)
