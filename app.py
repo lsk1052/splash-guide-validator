@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import numpy as np
 import easyocr
 
@@ -88,7 +88,7 @@ def apply_guide_overlay(image, os_name):
 
     return Image.alpha_composite(canvas, overlay).convert("RGB")
 
-# 5. [중요] CSS 스타일 코드 (사용자님의 원래 스타일 유지)
+# 5. 디자인 스타일 (CSS)
 st.markdown(
     """
     <style>
@@ -125,20 +125,20 @@ uploaded_file = st.file_uploader("시안 이미지를 업로드하세요 (PNG/JP
 if uploaded_file is None:
     st.info("좌측에서 OS를 선택한 뒤 이미지를 업로드하면 자동으로 검수가 진행됩니다.")
 else:
-    # 이미지 열기
+    # 1. 파일 정보 로드
     image = Image.open(uploaded_file).convert("RGB")
     actual_w, actual_h = image.size
     expected_w, expected_h = OS_SPECS[selected_os]["size"]
     file_size_kb = uploaded_file.size / 1024
 
-    # 데이터 분석 (UI 출력 전에 수행하여 NameError 방지)
+    # 2. 검증 데이터 생성 (중요: UI 출력 전 수행)
     is_dim_valid = (actual_w, actual_h) == (expected_w, expected_h)
     is_size_valid = file_size_kb <= 500
     
     with st.spinner('이미지 내 텍스트 분석 중...'):
         detected_ad_list = check_ad_text(image)
 
-    # 결과 상단 요약 UI
+    # 3. 결과 상단 요약 UI 표시
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -166,6 +166,6 @@ else:
 
     st.divider()
 
-    # 이미지 오버레이 및 출력
+    # 4. 가이드 오버레이 이미지 출력
     result_image = apply_guide_overlay(image, selected_os)
     st.image(result_image, caption=f"{selected_os} 가이드 오버레이 결과", use_container_width=True)
