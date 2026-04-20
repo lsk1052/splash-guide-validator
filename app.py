@@ -11,22 +11,36 @@ st.set_page_config(
 )
 
 # 2. OCR 분석 함수 (Tesseract 버전)
+from PIL import ImageOps, ImageFilter
+
 def check_ad_text(image):
     try:
-        # 1. 시력 강화: 이미지를 흑백(L)으로 변환하여 글자 대비를 높입니다.
-        gray_image = image.convert('L')
+        # 1. 이미지 크기 최적화 (Upscaling)
+        # 이미지가 너무 크면 글자가 작게 인식되므로, 분석하기 적당한 크기로 조절합니다.
+        w, h = image.size
+        # 가로 2000px 기준으로 리사이징하여 글자 식별력을 높입니다.
+        target_w = 2000
+        target_h = int(h * (target_w / w))
+        img_resized = image.resize((target_w, target_h), Image.Resampling.LANCZOS)
+
+        # 2. 전처리: 흑백 변환 + 대비 극대화 + 선명하게
+        # 대비를 높여서 글자와 배경을 확실히 분리합니다.
+        gray_img = ImageOps.grayscale(img_resized)
+        enhanced_img = ImageOps.autocontrast(gray_img)
+        # 선명하게 필터를 적용해 글자의 테두리를 강조합니다.
+        sharpened_img = enhanced_img.filter(ImageFilter.SHARPEN)
+
+        # 3. 전 영역 스캔 (PSM 11: 이미지 전체에서 흩어진 텍스트 찾기)
+        # 'kor+eng' 언어팩을 사용하고, 텍스트 배치가 자유로운 시안에 최적화된 설정을 씁니다.
+        custom_config = r'--oem 3 --psm 11'
+        extracted_text = pytesseract.image_to_string(sharpened_img, lang='kor+eng', config=custom_config)
         
-        # 2. 정밀 분석 설정: --psm 3 (자동 페이지 세그먼트) 설정을 추가합니다.
-        custom_config = r'--oem 3 --psm 3'
-        text = pytesseract.image_to_string(gray_image, lang='kor+eng', config=custom_config)
+        # 4. 비교를 위한 텍스트 정제 (공백/줄바꿈 제거 및 대문자화)
+        clean_text = extracted_text.replace(" ", "").replace("\n", "").upper()
         
-        # 3. 텍스트 클리닝: 줄바꿈과 공백을 모두 없애서 키워드 매칭 확률을 높입니다.
-        clean_text = text.replace(" ", "").replace("\n", "").upper()
-        
-        ad_keywords = ['광고', 'AD']
+        ad_keywords = ['광고', 'AD', '협찬', '할인', '구매']
         detected_ads = []
         
-        # 키워드 검사
         for keyword in ad_keywords:
             if keyword.upper() in clean_text:
                 detected_ads.append({"text": keyword, "prob": 1.0})
