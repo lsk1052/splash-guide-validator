@@ -184,44 +184,51 @@ st.markdown("""
     .status-text { font-size: 0.9rem; color: #AAAAAA; }
 
     /* --- 수정 및 추가된 가이드 영역 스타일 --- */
-    .guide-container {
-        background-color: #1E1E1E;
-        padding: 12px 20px;
-        border-radius: 10px;
-        border: 1px solid #333333;
-        margin-bottom: 20px;
-        /* 요소를 가로로 나열하고 수직/수평 정렬을 중앙으로 고정 */
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center; 
-        align-items: center;
-        gap: 20px;
-    }
+    /* 5. 디자인 스타일 (CSS) 내 가이드 영역 수정 */
+.guide-container {
+    background-color: #1E1E1E;
+    padding: 15px 25px;
+    border-radius: 12px;
+    border: 1px solid #333333;
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column; /* 요소들을 세로로 나열 */
+    align-items: center;    /* 가로축 중앙 정렬 */
+    gap: 12px;              /* 줄 간격 */
+    width: 100%;            /* 전체 너비 사용 */
+}
 
-    .guide-item {
-        display: flex;
-        align-items: center;
-        font-size: 0.85rem;
-        color: #DDDDDD;
-        line-height: 1; /* 텍스트가 아래로 처지는 것 방지 */
-    }
+.guide-row {
+    display: flex;
+    flex-wrap: wrap;        /* 좁아지면 줄바꿈 */
+    justify-content: center; /* 가로 중앙 정렬 */
+    align-items: center;     /* 세로축 일직선 정렬 */
+    gap: 20px;              /* 아이템 간 간격 */
+}
 
-    .color-box {
-        width: 16px;
-        height: 16px;
-        border-radius: 4px;
-        margin-right: 8px;
-        flex-shrink: 0; /* 아이콘 크기 고정 */
-    }
+.guide-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #DDDDDD;
+}
 
-    .warning-text {
-        display: flex;
-        align-items: center;
-        color: #FF5252;
-        font-size: 0.85rem;
-        font-weight: bold;
-        line-height: 1; /* 가이드 아이템들과 수평을 맞춤 */
-    }
+.color-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.warning-text {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #FF5252;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
     /* ------------------------------------ */
 
     .stImage { display: flex; justify-content: center; }
@@ -247,31 +254,20 @@ with st.sidebar:
 
 uploaded_file = st.file_uploader("시안 이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
 
-# [교체할 영역] 업로드 영역 하단 가이드 문구
+# [수정된 영역] 업로드 영역 하단 가이드 문구
 st.markdown("""
-    <div class="guide-container">
-        <div class="guide-item">
-            <div class="color-box" style="background-color: rgba(255, 0, 0, 0.8);"></div>
-            상단 노치 영역
-        </div>
-        <div class="guide-item">
-            <div class="color-box" style="background-color: rgba(128, 0, 128, 0.8);"></div>
-            좌우 크롭 영역
-        </div>
-        <div class="guide-item">
-            <div class="color-box" style="background-color: rgba(50, 255, 170, 0.8);"></div>
-            텍스트 안전 여백
-        </div>
-        
-        <div class="warning-text">
-            ⚠️ 주요 이미지와 텍스트가 3개의 영역을 침범하지 않도록 해주세요
-        </div>
-        
-        <div class="warning-text" style="color: #FF5252;">
-            ⚠️ AD 마크는 자동 부착되니 광고 텍스트 포함 여부를 꼭 체크해주세요!
-        </div>
+<div class="guide-container">
+    <div class="guide-row">
+        <div class="guide-item"><div class="color-box" style="background-color: rgba(255, 0, 0, 0.8);"></div>상단 노치 영역</div>
+        <div class="guide-item"><div class="color-box" style="background-color: rgba(128, 0, 128, 0.8);"></div>좌우 크롭 영역</div>
+        <div class="guide-item"><div class="color-box" style="background-color: rgba(50, 255, 170, 0.8);"></div>텍스트 안전 여백</div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="guide-row" style="flex-direction: column; gap: 5px;">
+        <div class="warning-text">⚠️ 주요 이미지와 텍스트가 3개의 영역을 침범하지 않도록 해주세요</div>
+        <div class="warning-text" style="color: #FF5252; opacity: 0.9;">⚠️ AD 마크는 자동 부착되니 광고 텍스트 포함 여부를 꼭 체크해주세요!</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
