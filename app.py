@@ -140,7 +140,7 @@ if uploaded_file:
         st.markdown(f'<div class="{status}">{"✅ 용량 적합" if is_size_valid else "❌ 용량 초과"}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="status-text">{file_size_kb:.1f} KB</div>', unsafe_allow_html=True)
     
-with col3:
+    with col3:
         if not is_blurry and not is_pixelated:
             st.markdown('<div class="check-pass">✅ 화질 양호</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">디자인 품질: {quality_score:.0f}점</div>', unsafe_allow_html=True)
