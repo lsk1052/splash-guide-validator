@@ -137,5 +137,5 @@ if uploaded_file:
     st.image(
         apply_guide_overlay(image, selected_os), 
         caption=f"{selected_os} 실제 사이즈 프리뷰 ({actual_w}x{actual_h})",
-        width=actual_w // 2 # 너무 클 수 있어 절반(50%) 사이즈로 제안하거나, actual_w 그대로 사용하세요.
+        width=actual_w # 너무 클 수 있어 절반(50%) 사이즈로 제안하거나, actual_w 그대로 사용하세요.
     )
