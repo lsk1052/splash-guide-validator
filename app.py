@@ -20,26 +20,33 @@ except Exception:
     st.error("API 키가 설정되지 않았습니다. Streamlit Secrets를 확인하세요.")
     st.stop()
 
-def check_ad_text(image):
+def check_design_compliance(image, os_name):
+    config = OS_SPECS[os_name]
+    notch = config["notch_height"]
+    side = config["crop_side"]
+    
     try:
-        # 1. AI에게 전달할 명확한 프롬프트 (들여쓰기 주의)
-        prompt = """
-        이 이미지는 모바일 앱의 스플래시 화면 시안입니다. 
-        이미지 내부에 '광고', 'AD', '협찬', '할인', '구매'와 같은 광고성 텍스트가 포함되어 있는지 확인해주세요.
-        만약 있다면 해당 단어들만 콤마(,)로 구분해서 답변해주고, 없다면 '없음'이라고만 답변하세요.
+        # AI에게 광고 여부와 영역 침범 여부를 동시에 묻습니다.
+        prompt = f"""
+        당신은 UX/UI 디자인 검수 전문가입니다. 이 {os_name} 스플래시 시안을 분석하세요.
+        
+        1. 광고 확인: '광고', 'AD', '이벤트', '할인' 등 홍보성 문구가 있나요?
+        2. 영역 침범 확인: 텍스트가 다음 '위험 영역'에 침범했나요?
+           - 상단 {notch}px 영역 (빨간색 가이드 부분)
+           - 좌우 각 {side}px 사이드 영역 (보라색 가이드 부분)
+        
+        결과는 반드시 다음 JSON 형식으로만 답변하세요:
+        {{"ad_found": ["단어1", "단어2"], "overflow": true/false, "reason": "이유 요약"}}
         """
-        # 2. 이미지 분석 실행 (이 줄의 시작 부분을 윗줄과 맞추세요)
+        
         response = model.generate_content([prompt, image])
-        result_text = response.text.strip()
-        
-        if "없음" in result_text or not result_text:
-            return []
-        
-        found_words = [word.strip() for word in result_text.split(',')]
-        return [{"text": word, "prob": 1.0} for word in found_words]
+        # JSON 응답을 안전하게 파싱하기 위한 처리
+        import json
+        result = json.loads(response.text.replace('```json', '').replace('```', '').strip())
+        return result
     except Exception as e:
-        # 에러 발생 시 로그 확인을 위해 빈 리스트 반환
-        return []
+        # 에러 발생 시 기본값 반환
+        return {"ad_found": [], "overflow": False, "reason": "분석 불가"}
 
 def evaluate_quality(pil_image):
     img_array = np.array(pil_image.convert("RGB"))
@@ -124,9 +131,8 @@ if uploaded_file:
     is_dim_valid = (actual_w, actual_h) == (expected_w, expected_h)
     is_size_valid = file_size_kb <= 1024 
     
-    with st.spinner('AI 분석 및 품질 검토 중...'):
-        detected_ad_list = check_ad_text(image)
-        # 중요: 세 번째 변수 이름을 quality_score로 받습니다.
+    with st.spinner('AI가 광고 및 안전 영역을 정밀 검수 중입니다...'):
+        compliance_result = check_design_compliance(image, selected_os)
         is_blurry, is_pixelated, quality_score, p_score = evaluate_quality(image)
 
     col1, col2, col3, col4 = st.columns(4)
@@ -150,11 +156,20 @@ if uploaded_file:
             st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본을 사용하세요.")
             
     with col4:
-        if not detected_ad_list: 
-            st.markdown('<div class="check-pass">✅ 광고 없음</div>', unsafe_allow_html=True)
+        # 광고 및 영역 침범 결과 통합 표시
+        ad_list = compliance_result.get("ad_found", [])
+        has_overflow = compliance_result.get("overflow", False)
+        
+        if not ad_list and not has_overflow:
+            st.markdown('<div class="check-pass">✅ 가이드 준수</div>', unsafe_allow_html=True)
+            st.markdown('<div class="status-text">광고 및 영역 침범 없음</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="check-fail">⚠️ 광고 감지</div>', unsafe_allow_html=True)
-            for ad in detected_ad_list: st.write(f"- `{ad['text']}`")
+            st.markdown('<div class="check-fail">⚠️ 가이드 위반</div>', unsafe_allow_html=True)
+            if ad_list:
+                st.write(f"🚫 광고 감지: `{', '.join(ad_list)}`")
+            if has_overflow:
+                st.write(f"🚫 안전 영역 침범")
+                st.caption(f"이유: {compliance_result.get('reason', '')}")
 
     st.divider()
     
