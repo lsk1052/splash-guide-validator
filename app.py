@@ -65,24 +65,21 @@ def evaluate_quality(pil_image):
     img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
-    # 1. 선명도 분석 (Laplacian Variance)
-    # 픽셀 간의 변화가 너무 적으면 흐릿함(Blurry)으로 판단
-    lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-    clarity_score = max(0, min(100, lap_var / 5)) 
-    
-    # 2. 노이즈 분석 (FFT)
+    # 노이즈 분석 (FFT)
     f = np.fft.fft2(gray)
     fshift = np.fft.fftshift(f)
     p_raw = np.mean(20 * np.log(np.abs(fshift) + 1))
     
-    # [엄격화] 기준값 172.0으로 하향 조정, 감점폭 확대
-    # 노이즈가 조금만 있어도 점수가 확 깎이게 설정
-    purity_score = max(0, min(100, 100 - (p_raw - 172.0) * 45)) 
+    # [수정] 감점폭을 살짝 완화하여 '보통' 수준의 이미지도 통과할 수 있게 함
+    purity_score = max(0, min(100, 100 - (p_raw - 173.0) * 35)) 
+    
+    # 선명도 분석 (Laplacian)
+    lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+    clarity_score = max(0, min(100, lap_var / 5)) 
 
-    # 3. [최종 판정 기준] 하나라도 낮으면 무조건 '화질 저하'
-    # 18점짜리 이미지가 '양호'로 나오는 것을 방지하기 위해 기준을 높였습니다.
-    is_blurry = clarity_score < 25 
-    is_pixelated = purity_score < 50 # (기존 35 -> 50으로 강화)
+    # [수정] 픽셀 깨짐 판정 기준을 50 -> 40으로 조정 (더 너그러워짐)
+    is_blurry = clarity_score < 20
+    is_pixelated = purity_score < 40 
     
     quality_score = (purity_score * 0.7) + (clarity_score * 0.3)
     
@@ -94,23 +91,26 @@ def get_quality_heatmap(pil_image):
     h, w = gray.shape
     overlay = img_cv.copy()
     
-    grid_size = 32
+    # 격자 사이즈를 32px로 유지 (정밀도 유지)
+    grid_size = 32 
     detected_count = 0
     
-    # 각 구역의 변동성을 계산하여 픽셀 튐 현상을 잡습니다.
     for y in range(0, h, grid_size):
         for x in range(0, w, grid_size):
             block = gray[y:y+grid_size, x:x+grid_size]
             if block.size < 100: continue
             
-            # 라플라시안 변산성: 픽셀이 깨진 곳일수록 이 값이 커집니다.
+            # 수치 분석
             score = cv2.Laplacian(block, cv2.CV_64F).var()
             
-            # [초민감] 기준을 25.0으로 낮추어 미세한 깨짐도 빨간 박스로 표시
-            if score > 25.0:
+            # [핵심 수정] 기준을 150.0으로 대폭 인상!
+            # 일반적인 선명한 텍스트는 50~100 사이가 나오지만, 
+            # 'OPEN RUN'처럼 깨진 텍스트는 150을 훌쩍 넘깁니다.
+            if score > 150.0:
                 cv2.rectangle(overlay, (x, y), (x+grid_size, y+grid_size), (0, 0, 255), -1)
                 detected_count += 1
 
+    # 빨간 박스 투명도를 0.4로 하여 시인성 확보
     result_img = cv2.addWeighted(overlay, 0.4, img_cv, 0.6, 0)
     return Image.fromarray(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)), detected_count
 
