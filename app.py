@@ -173,18 +173,7 @@ def apply_guide_overlay(image, os_name):
     
     return Image.alpha_composite(canvas, overlay).convert("RGB")
 
-# 5. 디자인 스타일 (CSS)
-st.markdown("""
-    <style>
-    .stApp { background-color: #111111; color: #F2F2F2; }
-    h1, h2, h3, h4 { color: #FFFFFF !important; } 
-    
-    .check-pass { font-size: 1.5rem; font-weight: 800; color: #00E676; }
-    .check-fail { font-size: 1.5rem; font-weight: 800; color: #FF5252; }
-    .status-text { font-size: 0.9rem; color: #AAAAAA; }
-
-    /* --- 수정 및 추가된 가이드 영역 스타일 --- */
-    /* 5. 디자인 스타일 (CSS) 내 가이드 영역 수정 */
+/* 5. 디자인 스타일 (CSS) 내 가이드 영역 수정 */
 .guide-container {
     background-color: #1E1E1E;
     padding: 15px 25px;
@@ -192,18 +181,19 @@ st.markdown("""
     border: 1px solid #333333;
     margin-bottom: 25px;
     display: flex;
-    flex-direction: column; /* 요소들을 세로로 나열 */
-    align-items: center;    /* 가로축 중앙 정렬 */
-    gap: 12px;              /* 줄 간격 */
-    width: 100%;            /* 전체 너비 사용 */
+    flex-direction: column; 
+    align-items: flex-start;    /* 왼쪽 정렬 */
+    gap: 10px;                  /* 줄 간격 */
+    width: 100%;
 }
 
 .guide-row {
     display: flex;
-    flex-wrap: wrap;        /* 좁아지면 줄바꿈 */
-    justify-content: center; /* 가로 중앙 정렬 */
-    align-items: center;     /* 세로축 일직선 정렬 */
-    gap: 20px;              /* 아이템 간 간격 */
+    flex-wrap: wrap;            
+    justify-content: flex-start; /* 왼쪽 정렬 */
+    align-items: center;         /* 요소들끼리 수직 중앙 맞춤 */
+    gap: 20px;                  /* 아이템 간 간격 */
+    width: 100%;
 }
 
 .guide-item {
@@ -224,10 +214,10 @@ st.markdown("""
 .warning-text {
     font-size: 0.85rem;
     font-weight: bold;
-    color: #FF5252;
     display: flex;
     align-items: center;
     gap: 5px;
+    line-height: 1;
 }
     /* ------------------------------------ */
 
@@ -255,15 +245,16 @@ with st.sidebar:
 uploaded_file = st.file_uploader("시안 이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
 
 # [수정된 영역] 업로드 영역 하단 가이드 문구
+# [수정된 영역] 업로드 영역 하단 가이드 문구
 st.markdown("""
 <div class="guide-container">
     <div class="guide-row">
         <div class="guide-item"><div class="color-box" style="background-color: rgba(255, 0, 0, 0.8);"></div>상단 노치 영역</div>
         <div class="guide-item"><div class="color-box" style="background-color: rgba(128, 0, 128, 0.8);"></div>좌우 크롭 영역</div>
         <div class="guide-item"><div class="color-box" style="background-color: rgba(50, 255, 170, 0.8);"></div>텍스트 안전 여백</div>
+        <div class="warning-text" style="color: #DDDDDD; margin-left: 10px;">⚠️ 주요 이미지와 텍스트가 3개의 영역을 침범하지 않도록 해주세요</div>
     </div>
-    <div class="guide-row" style="flex-direction: column; gap: 5px;">
-        <div class="warning-text">⚠️ 주요 이미지와 텍스트가 3개의 영역을 침범하지 않도록 해주세요</div>
+    <div class="guide-row">
         <div class="warning-text" style="color: #FF5252; opacity: 0.9;">⚠️ AD 마크는 자동 부착되니 광고 텍스트 포함 여부를 꼭 체크해주세요!</div>
     </div>
 </div>
