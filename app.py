@@ -154,13 +154,6 @@ if uploaded_file:
 
     st.divider()
     
-    # 실제 사이즈 프리뷰
-    st.image(
-        apply_guide_overlay(image, selected_os), 
-        caption=f"{selected_os} 실제 사이즈 프리뷰 ({actual_w}x{actual_h})",
-        width=actual_w // 2 
-    )
-    
     # [수정] 실제 사이즈로 표시하되, 너무 크면 브라우저 너비에 맞춤
     # width=actual_w를 명시하면 Streamlit이 해당 픽셀 너비로 렌더링을 시도합니다.
     st.image(
