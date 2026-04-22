@@ -249,7 +249,7 @@ st.markdown(f"""
         <div style="margin-bottom: 10px;">
             <span class="guide-item"><div class="color-box" style="background-color: rgba(255, 0, 0, 0.8);"></div>상단 노치 영역</span>
             <span class="guide-item"><div class="color-box" style="background-color: rgba(128, 0, 128, 0.8);"></div>좌우 크롭 영역</span>
-            <span class="guide-item"><div class="color-box" style="background-color: rgba(50, 255, 170, 0.8);"></div>텍스트 안전 여백 (주요 이미지와 텍스트가 3개의 영역을 침범하지 않도록 해주세요)</span>
+            <span class="guide-item"><div class="color-box" style="background-color: rgba(50, 255, 170, 0.8);"></div>텍스트 안전 여백 ⚠️주요 이미지와 텍스트가 3개의 영역을 침범하지 않도록 해주세요</span>
         </div>
         <div style="color: #FF5252; font-size: 0.85rem; font-weight: bold; border-top: 1px solid #333; pt-10px; margin-top: 10px; padding-top: 10px;">
             ⚠️ AD 마크는 자동으로 부착되니, 이미지에 광고/AD 텍스트가 포함되지 않게 꼭 체크해주세요!
