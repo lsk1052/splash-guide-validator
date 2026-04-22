@@ -66,33 +66,31 @@ def get_quality_heatmap(pil_image):
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
     
-    # 캔버스 복제 (여기에 빨간 표시를 할 예정)
+    # 캔버스 복제
     overlay = img_cv.copy()
     
-    # 격자 사이즈 설정 (이미지 크기에 따라 조정 가능)
-    grid_size = 64 
+    # 격자 사이즈를 48정도로 조정 (정밀도와 속도의 균형)
+    grid_size = 48 
     
     detected_count = 0
     for y in range(0, h, grid_size):
         for x in range(0, w, grid_size):
-            # 구역 추출
             block = gray[y:y+grid_size, x:x+grid_size]
             if block.shape[0] < 10 or block.shape[1] < 10: continue
             
-            # 구역별 노이즈 분석 (FFT 기반)
+            # 구역별 노이즈 분석
             f = np.fft.fft2(block)
             fshift = np.fft.fftshift(f)
             p_score = np.mean(20 * np.log(np.abs(fshift) + 1))
             
-            # 우리가 앞서 설정한 기준(176.5)보다 높은 구역만 표시
-            # 로컬 블록은 전체 평균보다 민감하므로 수치를 살짝 조정(185.0)
-            if p_score > 185.0:
-                # 픽셀이 깨진 구역에 반투명 붉은 사각형 그리기
+            # [수정] 기준치를 170.0으로 낮춰서 아주 미세한 지글거림도 포착합니다.
+            # 전체 판정 기준(176.5)보다 낮게 잡아야 '부분적 깨짐'이 잘 잡힙니다.
+            if p_score > 170.0:
                 cv2.rectangle(overlay, (x, y), (x+grid_size, y+grid_size), (0, 0, 255), -1)
                 detected_count += 1
 
-    # 원본과 오버레이 합성 (투명도 0.3)
-    result_img = cv2.addWeighted(overlay, 0.3, img_cv, 0.7, 0)
+    # 빨간 박스가 더 잘 보이도록 투명도 조정 (0.4)
+    result_img = cv2.addWeighted(overlay, 0.4, img_cv, 0.6, 0)
     return Image.fromarray(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)), detected_count
 
 # --- 여기서부터 복사해서 get_quality_heatmap 함수 아래에 붙여넣으세요 ---
