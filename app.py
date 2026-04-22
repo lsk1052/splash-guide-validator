@@ -199,7 +199,7 @@ if uploaded_file:
         else:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">품질 점수: {quality_score:.0f}점 (정밀도 부족)</div>', unsafe_allow_html=True)
-            st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본을 사용하시고 UX디자인팀에 검수 요청을 해주세요.")
+            st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본으로 변경해보시고\n동일한 경고가 뜬다면 UX디자인팀에 검수 요청을 해주세요.")
             
     with col4:
         ad_list = compliance_result.get("ad_found", [])
