@@ -95,6 +95,41 @@ def get_quality_heatmap(pil_image):
     result_img = cv2.addWeighted(overlay, 0.3, img_cv, 0.7, 0)
     return Image.fromarray(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)), detected_count
 
+# --- 여기서부터 복사해서 get_quality_heatmap 함수 아래에 붙여넣으세요 ---
+
+def evaluate_quality(pil_image):
+    # 이미지를 분석하기 좋게 변환
+    img_array = np.array(pil_image.convert("RGB"))
+    img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    
+    # 1. 원본 선명도/노이즈 분석
+    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+    sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+    edge_raw = np.mean(np.sqrt(sobel_x**2 + sobel_y**2))
+    
+    f = np.fft.fft2(gray)
+    fshift = np.fft.fftshift(f)
+    p_raw = np.mean(20 * np.log(np.abs(fshift) + 1))
+
+    # 2. 품질 점수 변환 로직 (관대한 버전: 35점 기준)
+    purity_score = max(0, min(100, 100 - (p_raw - 175.0) * 30))
+    clarity_score = max(0, min(100, edge_raw * 4))
+    
+    if purity_score < 30: 
+        clarity_score *= 0.7 # 픽셀이 너무 깨졌을 경우 선명도 감점
+
+    # 3. 판정 기준
+    is_blurry = clarity_score < 35
+    is_pixelated = purity_score < 35
+    
+    # UI용 최종 품질 점수
+    quality_score = (purity_score * 0.7) + (clarity_score * 0.3)
+    
+    return is_blurry, is_pixelated, quality_score, p_raw
+
+# --- 여기까지 복사 ---
+
 # 3. OS별 규격 정의
 OS_SPECS = {
     "iOS": {"size": (1580, 2795), "crop_side": 217, "notch_height": 328},
