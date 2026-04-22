@@ -60,17 +60,19 @@ def check_design_compliance(overlay_image, os_name):
         # 에러 발생 시 UI에 에러를 표시하지 않고 기본값으로 조용히 처리
         return {"ad_found": [], "overflow": False, "reason": "분석 엔진 일시 오류"}
 
-def get_quality_heatmap(pil_image):
-    # 분석용 이미지 변환
+# p_raw 값을 인자로 받도록 수정했습니다.
+def get_quality_heatmap(pil_image, p_raw):
     img_cv = cv2.cvtColor(np.array(pil_image.convert("RGB")), cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
-    
-    # 캔버스 복제
     overlay = img_cv.copy()
     
-    # 격자 사이즈를 48정도로 조정 (정밀도와 속도의 균형)
-    grid_size = 48 
+    # 격자를 더 촘촘하게 (32px)
+    grid_size = 32 
+    
+    # [핵심] 전체 평균보다 약간만 낮아도 감지하도록 임계값을 유동적으로 설정
+    # 전체 평균이 177점이라면, 각 구역은 150점만 넘어도 '상대적 노이즈'로 판단합니다.
+    local_threshold = p_raw - 30 
     
     detected_count = 0
     for y in range(0, h, grid_size):
@@ -78,18 +80,15 @@ def get_quality_heatmap(pil_image):
             block = gray[y:y+grid_size, x:x+grid_size]
             if block.shape[0] < 10 or block.shape[1] < 10: continue
             
-            # 구역별 노이즈 분석
             f = np.fft.fft2(block)
             fshift = np.fft.fftshift(f)
             p_score = np.mean(20 * np.log(np.abs(fshift) + 1))
             
-            # [수정] 기준치를 170.0으로 낮춰서 아주 미세한 지글거림도 포착합니다.
-            # 전체 판정 기준(176.5)보다 낮게 잡아야 '부분적 깨짐'이 잘 잡힙니다.
-            if p_score > 170.0:
+            # 구역 점수가 유동적 임계값을 넘으면 표시
+            if p_score > local_threshold:
                 cv2.rectangle(overlay, (x, y), (x+grid_size, y+grid_size), (0, 0, 255), -1)
                 detected_count += 1
 
-    # 빨간 박스가 더 잘 보이도록 투명도 조정 (0.4)
     result_img = cv2.addWeighted(overlay, 0.4, img_cv, 0.6, 0)
     return Image.fromarray(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)), detected_count
 
@@ -235,10 +234,10 @@ if uploaded_file:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">품질 점수: {quality_score:.0f}점</div>', unsafe_allow_html=True)
             
-            # [고도화 추가] 픽셀 깨짐 지점 시각화 버튼
-            if st.button("어디가 깨졌나요?"):
-                heatmap_img, count = get_quality_heatmap(image)
-                st.image(heatmap_img, caption=f"빨간색 표시 구역({count}곳)의 픽셀 노이즈가 높습니다.")
+            # [수정] get_quality_heatmap에 p_score(전체 노이즈 값)를 함께 전달합니다.
+            if st.button("🔍 어디가 깨졌나요?"):
+                heatmap_img, count = get_quality_heatmap(image, p_score)
+                st.image(heatmap_img, caption=f"빨간색 표시 구역({count}곳)의 노이즈가 상대적으로 높습니다.")
             
     with col4:
         ad_list = compliance_result.get("ad_found", [])
