@@ -120,34 +120,46 @@ if uploaded_file:
     
     with st.spinner('AI 분석 및 품질 검토 중...'):
         detected_ad_list = check_ad_text(image)
-        is_blurry, is_pixelated, b_score, p_score = evaluate_quality(image)
+        # 중요: 세 번째 변수 이름을 quality_score로 받습니다.
+        is_blurry, is_pixelated, quality_score, p_score = evaluate_quality(image)
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         status = "check-pass" if is_dim_valid else "check-fail"
         st.markdown(f'<div class="{status}">{"✅ 규격 통과" if is_dim_valid else "❌ 규격 오류"}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="status-text">{actual_w}x{actual_h}px</div>', unsafe_allow_html=True)
+    
     with col2:
         status = "check-pass" if is_size_valid else "check-fail"
         st.markdown(f'<div class="{status}">{"✅ 용량 적합" if is_size_valid else "❌ 용량 초과"}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="status-text">{file_size_kb:.1f} KB</div>', unsafe_allow_html=True)
+    
     with col3:
-        # 점수 기반 판단
+        # 이 부분이 quality_score를 사용하는 출력 영역입니다.
         if not is_blurry and not is_pixelated:
             st.markdown('<div class="check-pass">✅ 화질 양호</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">선명도: {quality_score:.1f} / 노이즈: {p_score:.1f}</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
-            reason = "텍스트 깨짐 및 노이즈" if is_pixelated else "이미지 흐림"
+            reason = "픽셀 깨짐 및 노이즈" if is_pixelated else "이미지 흐림"
             st.markdown(f'<div class="status-text">{reason} (점수: {quality_score:.1f})</div>', unsafe_allow_html=True)
             st.warning("원본 파일(70% 이상 품질)을 사용해 주세요.")
+            
     with col4:
-        if not detected_ad_list: st.markdown('<div class="check-pass">✅ 광고 없음</div>', unsafe_allow_html=True)
+        if not detected_ad_list: 
+            st.markdown('<div class="check-pass">✅ 광고 없음</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="check-fail">⚠️ 광고 감지</div>', unsafe_allow_html=True)
             for ad in detected_ad_list: st.write(f"- `{ad['text']}`")
 
     st.divider()
+    
+    # 실제 사이즈 프리뷰
+    st.image(
+        apply_guide_overlay(image, selected_os), 
+        caption=f"{selected_os} 실제 사이즈 프리뷰 ({actual_w}x{actual_h})",
+        width=actual_w // 2 
+    )
     
     # [수정] 실제 사이즈로 표시하되, 너무 크면 브라우저 너비에 맞춤
     # width=actual_w를 명시하면 Streamlit이 해당 픽셀 너비로 렌더링을 시도합니다.
