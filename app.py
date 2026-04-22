@@ -35,23 +35,38 @@ def check_ad_text(image):
     except Exception: return []
 
 def evaluate_quality(pil_image):
+    # 이미지를 분석하기 좋게 변환 및 리사이즈
     img_array = np.array(pil_image.convert("RGB"))
     img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
-    # --- 수치 조정 (더 관대하게 변경) ---
-    blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
+    # 1. 선명도 분석 (Sobel 연산자 사용)
+    # Laplacian보다 픽셀의 변화율을 더 정밀하게 측정합니다.
+    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+    sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+    edge_score = np.mean(np.sqrt(sobel_x**2 + sobel_y**2))
     
+    # 2. 픽셀 노이즈/거칠기 분석 (입자감 체크)
+    # 저화질 이미지에서 나타나는 특유의 자글자글한 노이즈를 측정합니다.
+    noise_score = cv2.meanStdDev(gray)[1][0][0] 
+    
+    # 3. FFT (주파수 분석) - 픽셀 깨짐(계단 현상) 감지
     f = np.fft.fft2(gray)
     fshift = np.fft.fftshift(f)
     magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1)
     pixel_score = np.mean(magnitude_spectrum)
+
+    # --- [이선경 님의 이미지 맞춤형 임계값] ---
+    # 원본(250점대)과 저화질(150점대 이하)을 가르는 기준입니다.
+    # edge_score가 낮거나 pixel_score가 비정상적으로 높으면 필터링합니다.
     
-    # 기존보다 기준을 대폭 완화했습니다.
-    is_blurry = blur_score < 40.0    # (기존 80 -> 40) 숫자가 작을수록 더 흐려야 걸림
-    is_pixelated = pixel_score > 195.0 # (기존 160 -> 195) 숫자가 커야 깨짐으로 판정
+    is_blurry = edge_score < 12.0    # 선명도 기준 (값이 낮을수록 흐림)
+    is_pixelated = pixel_score > 185.0 # 픽셀 노이즈 기준 (값이 높을수록 깨짐)
     
-    return is_blurry, is_pixelated, blur_score, pixel_score
+    # 종합 점수 (UI 표시용)
+    quality_score = edge_score 
+    
+    return is_blurry, is_pixelated, quality_score, pixel_score
 
 # 3. OS별 규격 정의
 OS_SPECS = {
@@ -117,13 +132,15 @@ if uploaded_file:
         st.markdown(f'<div class="{status}">{"✅ 용량 적합" if is_size_valid else "❌ 용량 초과"}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="status-text">{file_size_kb:.1f} KB</div>', unsafe_allow_html=True)
     with col3:
+        # 점수 기반 판단
         if not is_blurry and not is_pixelated:
             st.markdown('<div class="check-pass">✅ 화질 양호</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="status-text">진단 점수: {b_score:.0f}/{p_score:.0f}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="status-text">선명도: {quality_score:.1f} / 노이즈: {p_score:.1f}</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
-            msg = "흐림" if is_blurry else "픽셀 깨짐"
-            st.markdown(f'<div class="status-text">{msg} (점수: {b_score:.0f}/{p_score:.0f})</div>', unsafe_allow_html=True)
+            reason = "텍스트 깨짐 및 노이즈" if is_pixelated else "이미지 흐림"
+            st.markdown(f'<div class="status-text">{reason} (점수: {quality_score:.1f})</div>', unsafe_allow_html=True)
+            st.warning("원본 파일(70% 이상 품질)을 사용해 주세요.")
     with col4:
         if not detected_ad_list: st.markdown('<div class="check-pass">✅ 광고 없음</div>', unsafe_allow_html=True)
         else:
