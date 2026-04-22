@@ -159,7 +159,7 @@ with st.sidebar:
 uploaded_file = st.file_uploader("시안 이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
 
 # [추가] 업로드 영역 하단 경고 문구
-st.markdown('<div class="ad-warning">⚠️ AD 마크는 자동으로 부착되니, 이미지 검수 시 광고, AD 텍스트가 포함되지 않게 꼭 체크해주세요!</div>', unsafe_allow_html=True)
+st.markdown('<div class="ad-warning">⚠️ AD 마크는 자동으로 부착되니, 이미지에 광고/AD 텍스트가 포함되지 않게 꼭 체크해주세요!</div>', unsafe_allow_html=True)
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
@@ -199,7 +199,7 @@ if uploaded_file:
         else:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">품질 점수: {quality_score:.0f}점 (정밀도 부족)</div>', unsafe_allow_html=True)
-            st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본을 사용하세요.")
+            st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본을 사용하시고 UX디자인팀에 검수 요청을 해주세요.")
             
     with col4:
         ad_list = compliance_result.get("ad_found", [])
