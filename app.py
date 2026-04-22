@@ -20,33 +20,29 @@ except Exception:
     st.error("API 키가 설정되지 않았습니다. Streamlit Secrets를 확인하세요.")
     st.stop()
 
-def check_design_compliance(image, os_name):
-    config = OS_SPECS[os_name]
-    notch = config["notch_height"]
-    side = config["crop_side"]
-    
+def check_design_compliance(overlay_image, os_name):
     try:
-        # AI에게 광고 여부와 영역 침범 여부를 동시에 묻습니다.
+        # AI에게 색상이 입혀진 가이드 이미지를 직접 보여줍니다.
         prompt = f"""
-        당신은 UX/UI 디자인 검수 전문가입니다. 이 {os_name} 스플래시 시안을 분석하세요.
+        당신은 UX/UI 디자인 검수 전문가입니다. 
+        첨부된 이미지는 {os_name} 스플래시 가이드(빨간색/보라색 영역)가 적용된 시안입니다.
+
+        1. 광고 확인: 이미지 내에 '광고', 'AD', 'EVENT', '할인' 등의 문구가 있다면 무조건 검출하세요.
+        2. 영역 침범 확인: 텍스트나 로고가 '빨간색(상단)' 또는 '보라색(좌우)' 색상 영역에 조금이라도 겹쳐 있나요?
         
-        1. 광고 확인: '광고', 'AD', '이벤트', '할인' 등 홍보성 문구가 있나요?
-        2. 영역 침범 확인: 텍스트가 다음 '위험 영역'에 침범했나요?
-           - 상단 {notch}px 영역 (빨간색 가이드 부분)
-           - 좌우 각 {side}px 사이드 영역 (보라색 가이드 부분)
-        
-        결과는 반드시 다음 JSON 형식으로만 답변하세요:
-        {{"ad_found": ["단어1", "단어2"], "overflow": true/false, "reason": "이유 요약"}}
+        반드시 아래 JSON 형식으로만 답변하세요 (다른 설명은 금지):
+        {{"ad_found": ["단어1"], "overflow": true, "reason": "침범 부위 설명"}}
         """
         
-        response = model.generate_content([prompt, image])
-        # JSON 응답을 안전하게 파싱하기 위한 처리
+        response = model.generate_content([prompt, overlay_image])
+        
+        # JSON 파싱 로직 강화
+        txt = response.text.replace('```json', '').replace('```', '').strip()
         import json
-        result = json.loads(response.text.replace('```json', '').replace('```', '').strip())
-        return result
+        return json.loads(txt)
     except Exception as e:
-        # 에러 발생 시 기본값 반환
-        return {"ad_found": [], "overflow": False, "reason": "분석 불가"}
+        # 에러 발생 시 로그를 남기고 빈 결과 반환
+        return {"ad_found": [], "overflow": False, "reason": "분석 엔진 오류"}
 
 def evaluate_quality(pil_image):
     img_array = np.array(pil_image.convert("RGB"))
@@ -129,10 +125,17 @@ if uploaded_file:
     file_size_kb = uploaded_file.size / 1024
 
     is_dim_valid = (actual_w, actual_h) == (expected_w, expected_h)
-    is_size_valid = file_size_kb <= 1024 
+    is_size_valid = file_size_kb <= 500 
     
-    with st.spinner('AI가 광고 및 안전 영역을 정밀 검수 중입니다...'):
-        compliance_result = check_design_compliance(image, selected_os)
+    # [수정된 분석 블록]
+    with st.spinner('AI가 가이드 라인을 기준으로 정밀 분석 중입니다...'):
+        # 1. 가이드 레이어를 먼저 그리고, 그 이미지를 AI에게 보냅니다.
+        overlay_img = apply_guide_overlay(image, selected_os)
+        
+        # 2. 광고 및 영역 침범 여부를 한꺼번에 분석합니다.
+        compliance_result = check_design_compliance(overlay_img, selected_os)
+        
+        # 3. 화질 분석을 수행합니다.
         is_blurry, is_pixelated, quality_score, p_score = evaluate_quality(image)
 
     col1, col2, col3, col4 = st.columns(4)
