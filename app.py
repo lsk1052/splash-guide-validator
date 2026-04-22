@@ -20,13 +20,19 @@ except Exception:
     st.error("API 키가 설정되지 않았습니다. Streamlit Secrets를 확인하세요.")
     st.stop()
 
-def check_ad_text(image):
-    try:
-        prompt = """
-        이 이미지는 모바일 앱의 스플래시 화면 시안입니다. 
-        이미지 내부에 '광고', 'AD', '협찬', '할인', '구매'와 같은 광고성 텍스트가 포함되어 있는지 확인해주세요.
-        만약 있다면 해당 단어들만 콤마(,)로 구분해서 답변해주고, 없다면 '없음'이라고만 답변하세요.
-        """
+def check_design_violations(image, os_name):
+    config = OS_SPECS[os_name]
+    w, h = image.size
+    
+    prompt = f"""
+    이 이미지는 {os_name}용 앱 스플래시 화면입니다. 
+    1. 광고성 문구('광고', 'AD', '할인' 등)가 있는지 확인하세요.
+    2. 모든 텍스트의 위치를 확인하고, 다음 영역을 침범하는지 확인하세요:
+       - 좌우 여백: {config['crop_side']}px 이내
+       - 상단 노치: {config['notch_height']}px 이내
+    결과를 '광고: [단어들], 넘침: [예/아니오]' 형태로 알려주세요.
+    """
+    # 이후 Gemini의 답변을 파싱하여 UI에 빨간색 경고를 띄움
         response = model.generate_content([prompt, image])
         result_text = response.text.strip()
         if "없음" in result_text or not result_text: return []
