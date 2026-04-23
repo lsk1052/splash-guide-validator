@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw
 import google.generativeai as genai
 import cv2
 import numpy as np
+import json
 
 # 1. 페이지 설정
 st.set_page_config(
@@ -11,7 +12,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Gemini API 설정 (유지)
+# 2. Gemini API 설정
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
@@ -22,7 +23,7 @@ except Exception:
 
 def check_design_compliance(overlay_image, os_name):
     try:
-        # 이 부분을 아래의 새로운 프롬프트로 교체하세요!
+        # v3.1의 정교화된 프롬프트 사용
         prompt = f"""
         당신은 아주 까다로운 UX/UI 디자인 검수관입니다. 
         첨부된 {os_name} 시안에는 디자인 가이드라인이 컬러 영역으로 표시되어 있습니다.
@@ -47,21 +48,15 @@ def check_design_compliance(overlay_image, os_name):
         }}
         """
         
-        # 분석 실행 (이후 로직은 동일)
         response = model.generate_content([prompt, overlay_image])
-        
-        # JSON 파싱 및 디버깅을 위한 출력
         raw_text = response.text.replace('```json', '').replace('```', '').strip()
-        import json
         result = json.loads(raw_text)
         
-        # 결과가 비어있다면 AI에게 다시 한번 경고 (Self-Correction 로직)
         if not result.get("ad_found") and "광고" in raw_text:
-             result["ad_found"] = ["광고"] # 텍스트에는 있는데 리스트에 없는 경우 보정
+             result["ad_found"] = ["광고"]
              
         return result
     except Exception as e:
-        # 에러 발생 시 UI에 에러를 표시하지 않고 기본값으로 조용히 처리
         return {"ad_found": [], "overflow": False, "reason": "분석 엔진 일시 오류"}
 
 def evaluate_quality(pil_image):
@@ -69,76 +64,38 @@ def evaluate_quality(pil_image):
     img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
-    # 노이즈 분석 (FFT)
+    # 노이즈 분석 (FFT) - v3.1의 엄격한 기준 적용
     f = np.fft.fft2(gray)
     fshift = np.fft.fftshift(f)
     p_raw = np.mean(20 * np.log(np.abs(fshift) + 1))
     
-    # [수정] 기준치를 175.0으로 다시 조이고, 감점 폭을 높여 3번 이미지를 잡아냅니다.
+    # 기준치를 조여 품질이 낮은 이미지를 더 정확히 판별
     purity_score = max(0, min(100, 100 - (p_raw - 175.0) * 45)) 
     
     # 선명도 분석 (Laplacian)
     lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
     clarity_score = max(0, min(100, lap_var / 8)) 
 
-    # [수정] 픽셀 깨짐 판정 기준을 45점으로 상향하여 3번 이미지를 '화질 저하'로 분류
     is_blurry = clarity_score < 18
     is_pixelated = purity_score < 45 
     
     quality_score = (purity_score * 0.7) + (clarity_score * 0.3)
     
-    return is_blurry, is_pixelated, quality_score, p_raw
+    return is_blurry, is_pixelated, quality_score
 
-def get_quality_heatmap(pil_image):
-    img_cv = cv2.cvtColor(np.array(pil_image.convert("RGB")), cv2.COLOR_RGB2BGR)
-    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    h, w = gray.shape
-    overlay = img_cv.copy()
-    
-    grid_size = 32
-    blocks = []
-    
-    for y in range(0, h, grid_size):
-        for x in range(0, w, grid_size):
-            block = gray[y:y+grid_size, x:x+grid_size]
-            if block.size < 100: continue
-            score = cv2.Laplacian(block, cv2.CV_64F).var()
-            blocks.append(((x, y), score))
-    
-    # [수정] 전체 구역 중 상위 2.5%에 해당하는 점수를 문턱값으로 사용
-    scores = [b[1] for b in blocks]
-    if not scores: return pil_image, 0
-    
-    # 상위 2.5% 지점을 찾습니다. (이 수치가 높을수록 'OPEN RUN'만 잡힙니다)
-    high_threshold = np.percentile(scores, 97.5) 
-    
-    # 최소한의 노이즈 바닥 수치(250.0)를 설정하여 너무 깨끗한 이미지는 보호
-    final_limit = max(250.0, high_threshold)
-
-    detected_count = 0
-    for (x, y), score in blocks:
-        if score >= final_limit:
-            cv2.rectangle(overlay, (x, y), (x+grid_size, y+grid_size), (0, 0, 255), -1)
-            detected_count += 1
-
-    result_img = cv2.addWeighted(overlay, 0.4, img_cv, 0.6, 0)
-    return Image.fromarray(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)), detected_count
-
-# --- 여기까지 복사 ---
-
-# 3. OS별 규격 정의 (에메랄드 패딩 규격 추가)
+# 3. OS별 규격 정의 (v3.1 에메랄드 패딩 포함)
 OS_SPECS = {
     "iOS": {
         "size": (1580, 2795), 
         "crop_side": 217, 
         "notch_height": 328,
-        "padding_width": 100  # 에메랄드 영역 너비
+        "padding_width": 100 
     },
     "Android": {
         "size": (1536, 2152), 
         "crop_side": 328, 
         "notch_height": 211,
-        "padding_width": 100  # 에메랄드 영역 너비
+        "padding_width": 100 
     },
 }
 
@@ -149,7 +106,6 @@ def apply_guide_overlay(image, os_name):
     overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     
-    # 컬러 정의 (에메랄드 추가: 50, 255, 170, 76)
     purple = (128, 0, 128, 76)
     red = (255, 0, 0, 76)
     emerald = (50, 255, 170, 76) 
@@ -158,21 +114,20 @@ def apply_guide_overlay(image, os_name):
     notch_height = config["notch_height"]
     pad_w = config["padding_width"]
 
-    # 1. 자주색 영역 (좌우 크롭 영역)
+    # 1. 자주색 영역 (크롭)
     draw.rectangle([(0, 0), (crop_side, height)], fill=purple)
     draw.rectangle([(width - crop_side, 0), (width, height)], fill=purple)
     
-    # 2. 에메랄드 영역 (좌우 안전 여백 - 크롭 영역 안쪽으로 배치)
-    # 상단 노치 영역 아래부터 시작하도록 세팅
+    # 2. 에메랄드 영역 (안전 여백)
     draw.rectangle([(crop_side, notch_height), (crop_side + pad_w, height)], fill=emerald)
     draw.rectangle([(width - crop_side - pad_w, notch_height), (width - crop_side, height)], fill=emerald)
     
-    # 3. 빨간색 영역 (상단 노치 영역)
+    # 3. 빨간색 영역 (노치)
     draw.rectangle([(0, 0), (width, notch_height)], fill=red)
     
     return Image.alpha_composite(canvas, overlay).convert("RGB")
 
-# 5. 디자인 스타일 (CSS)
+# 4. 디자인 스타일 (CSS) - v3.1의 세련된 UI 스타일 유지
 st.markdown("""
     <style>
     .stApp { background-color: #111111; color: #F2F2F2; }
@@ -182,7 +137,6 @@ st.markdown("""
     .check-fail { font-size: 1.5rem; font-weight: 800; color: #FF5252; }
     .status-text { font-size: 0.9rem; color: #AAAAAA; }
 
-    /* 가이드 컨테이너 (왼쪽 정렬) */
     .guide-container {
         background-color: #1E1E1E;
         padding: 15px 25px;
@@ -191,7 +145,7 @@ st.markdown("""
         margin-bottom: 25px;
         display: flex;
         flex-direction: column; 
-        align-items: flex-start; /* 왼쪽 정렬 */
+        align-items: flex-start;
         gap: 10px;
         width: 100%;
     }
@@ -199,8 +153,8 @@ st.markdown("""
     .guide-row {
         display: flex;
         flex-wrap: wrap;            
-        justify-content: flex-start; /* 왼쪽 정렬 */
-        align-items: center;         /* 수직 중앙 정렬 */
+        justify-content: flex-start;
+        align-items: center;
         gap: 20px;
         width: 100%;
     }
@@ -233,15 +187,14 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 6. 메인 UI
+# 5. 메인 UI
 st.title("스플래시 가이드 검증기")
-st.caption("UX/UI 디자인 품질 및 규격 자동 검수 도구")
+st.caption("UX/UI 디자인 품질 및 규격 자동 검수 도구 (v3.2 Final)")
 
 with st.sidebar:
     st.header("검수 옵션")
     selected_os = st.radio("OS 선택", options=["Android", "iOS"], index=0)
     
-    # --- [추가] 사이드바에도 상세 정보 표기 ---
     st.divider()
     st.markdown(f"### 📱 {selected_os} 상세 규격")
     spec = OS_SPECS[selected_os]
@@ -252,7 +205,7 @@ with st.sidebar:
 
 uploaded_file = st.file_uploader("시안 이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
 
-# [수정된 영역] 업로드 영역 하단 가이드 문구
+# v3.1에서 호평받은 가이드 안내 UI
 st.markdown("""
 <div class="guide-container">
     <div class="guide-row">
@@ -280,17 +233,12 @@ if uploaded_file:
     is_dim_valid = (actual_w, actual_h) == (expected_w, expected_h)
     is_size_valid = file_size_kb <= 500 
     
-    # [수정된 분석 블록]
     with st.spinner('AI가 가이드 라인을 기준으로 정밀 분석 중입니다...'):
-        # 1. 가이드 레이어를 먼저 그리고, 그 이미지를 AI에게 보냅니다.
         overlay_img = apply_guide_overlay(image, selected_os)
-        
-        # 2. 광고 및 영역 침범 여부를 한꺼번에 분석합니다.
         compliance_result = check_design_compliance(overlay_img, selected_os)
-        
-        # 3. 화질 분석을 수행합니다.
-        is_blurry, is_pixelated, quality_score, p_score = evaluate_quality(image)
+        is_blurry, is_pixelated, quality_score = evaluate_quality(image)
 
+    # 결과 표시 레이아웃
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         status = "check-pass" if is_dim_valid else "check-fail"
@@ -303,19 +251,14 @@ if uploaded_file:
         st.markdown(f'<div class="status-text">{file_size_kb:.1f} KB</div>', unsafe_allow_html=True)
     
     with col3:
-        # 점수가 50점 미만이거나, AI가 깨짐을 감지한 경우 모두 '화질 저하'로 분류
+        # 히트맵 기능이 제거된 심플한 품질 결과창
         if not is_blurry and not is_pixelated and quality_score >= 50:
             st.markdown('<div class="check-pass">✅ 화질 양호</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">디자인 품질: {quality_score:.0f}점</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">품질 점수: {quality_score:.0f}점</div>', unsafe_allow_html=True)
-            
-            st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본으로 변경해보시고  \n동일한 경고가 뜬다면 UX디자인팀에 검수 요청을 해주세요.")
-            
-            if st.button("🔍 어디가 깨졌나요?"):
-                heatmap_img, count = get_quality_heatmap(image)
-                st.image(heatmap_img, caption=f"빨간색 표시 구역({count}곳)의 노이즈가 높습니다.")
+            st.warning("픽셀 깨짐이 감지되었습니다. 고화질 원본으로 변경 후 다시 시도해 주세요.")
             
     with col4:
         ad_list = compliance_result.get("ad_found", [])
@@ -331,14 +274,13 @@ if uploaded_file:
                 st.error(f"🚫 광고 발견: {', '.join(ad_list)}")
             if has_overflow:
                 st.error(f"🚫 안전 영역 침범")
-                st.info(f"**이유:** {reason_msg}") # AI의 판단 근거를 직접 노출
+                st.info(f"**이유:** {reason_msg}")
 
     st.divider()
     
-    # [수정] 실제 사이즈로 표시하되, 너무 크면 브라우저 너비에 맞춤
-    # width=actual_w를 명시하면 Streamlit이 해당 픽셀 너비로 렌더링을 시도합니다.
+    # 실제 사이즈 프리뷰
     st.image(
         apply_guide_overlay(image, selected_os), 
         caption=f"{selected_os} 실제 사이즈 프리뷰 ({actual_w}x{actual_h})",
-        width=actual_w # 너무 클 수 있어 절반(50%) 사이즈로 제안하거나, actual_w 그대로 사용하세요.
+        width=actual_w
     )
