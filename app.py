@@ -143,7 +143,7 @@ st.markdown("""
     
     /* 1. 사이드바 내 마크다운 블록 마진 초기화 (음수 마진 제거!) */
     [data-testid="stSidebar"] .stMarkdown {
-        margin-bottom: 10px !important;
+        margin-bottom: 100px !important;
     }
 
     /* 2. 제목과 리스트 사이 여백 최소화 */
