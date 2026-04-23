@@ -143,12 +143,12 @@ st.markdown("""
     
     /* 1. 사이드바 내 마크다운 블록 마진 초기화 (음수 마진 제거!) */
     [data-testid="stSidebar"] .stMarkdown {
-        margin-bottom: 100px !important;
+        margin-bottom: 0px !important;
     }
 
     /* 2. 제목과 리스트 사이 여백 최소화 */
     [data-testid="stSidebar"] h3 {
-        margin-bottom: 2px !important;
+        margin-bottom: 10px !important;
         padding-bottom: 0 !important;
         line-height: 1.2 !important;
     }
