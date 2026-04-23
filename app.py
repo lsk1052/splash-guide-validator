@@ -178,6 +178,11 @@ with st.sidebar:
     selected_os = st.radio("OS 선택", options=["Android", "iOS"], index=0)
     
     st.divider()
+    
+    # ⚠️ 중요: OS_SPECS에서 현재 선택된 OS의 정보를 가져와서 'spec'에 저장!
+    spec = OS_SPECS[selected_os]
+    
+    # 이제 spec을 사용할 수 있습니다.
     st.markdown(f"""
     ### 📱 {selected_os} 상세 규격
     - **권장 사이즈:** {spec['size'][0]}x{spec['size'][1]}px
