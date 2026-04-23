@@ -157,17 +157,20 @@ with st.sidebar:
 
 uploaded_file = st.file_uploader("시안 이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
 
-# 가이드 안내 UI (AD 마크 관련 문구 삭제)
+# v3.1에서 호평받은 가이드 안내 UI
 st.markdown("""
 <div class="guide-container">
     <div class="guide-row">
         <div class="guide-item"><div class="color-box" style="background-color: rgba(255, 0, 0, 0.8);"></div>상단 노치 영역</div>
         <div class="guide-item"><div class="color-box" style="background-color: rgba(128, 0, 128, 0.8);"></div>좌우 크롭 영역</div>
         <div class="guide-item"><div class="color-box" style="background-color: rgba(50, 255, 170, 0.8);"></div>텍스트 안전 여백</div>
+        <div class="warning-text" style="color: #DDDDDD; margin-left: 5px;">
+            ⚠️ 주요 이미지와 텍스트가 왼쪽 3개의 영역을 침범하지 않도록 해주세요!
+        </div>
     </div>
     <div class="guide-row">
-        <div class="warning-text" style="color: #DDDDDD;">
-            ⚠️ 하단 프리뷰 이미지를 보고 주요 이미지와 텍스트가 컬러 영역을 침범하지 않았는지 직접 확인해 주세요!
+        <div class="warning-text" style="color: #FF5252; opacity: 0.9;">
+            ⚠️ AD 마크는 자동 부착되니 광고 텍스트 포함 여부를 꼭 체크해 주세요!
         </div>
     </div>
 </div>
@@ -204,7 +207,7 @@ if uploaded_file:
         else:
             st.markdown('<div class="check-fail">⚠️ 화질 저하</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="status-text">품질 점수: {quality_score:.0f}점</div>', unsafe_allow_html=True)
-            st.warning("화질 점수가 기준(60점)에 미달되었습니다. 원본 이미지를 확인해 주세요.")
+            st.warning("화질 점수가 기준(60점)에 미달되었습니다.  \n고화질 원본 이미지로 교체해 주시고,  \n동일한 경고가 뜬다면 UX디자인팀에 검수 요청을 해주세요.")
 
     st.divider()
     
