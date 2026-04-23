@@ -137,33 +137,35 @@ st.markdown("""
         line-height: 1.2;
     }
 
+    /* --- 사이드바 상세 규격 영역 정밀 제어 --- */
+
+/* 1. 사이드바 마크다운 블록 사이의 기본 마진 최소화 */
+/* (이걸 0으로 둬야 아래에서 설정하는 개별 마진들이 정확하게 먹힙니다) */
+[data-testid="stSidebar"] .stMarkdown {
+    margin-bottom: 0px !important;
+}
+
+/* 2. [타이틀과 리스트 사이] 간격 조정 */
+/* ### 📱 Android 상세 규격 바로 아래 여백입니다. */
+[data-testid="stSidebar"] h3 {
+    margin-bottom: 20px !important;  /* 이 값을 늘리면 타이틀과 첫 리스트 사이가 벌어집니다 */
+    padding-bottom: 0 !important;
+    line-height: 1.2 !important;
+}
+
+/* 3. [리스트 아이템들 간의] 간격 조정 */
+/* '권장 사이즈'와 '용량 제한' 사이의 여백입니다. */
+[data-testid="stSidebar"] li {
+    margin-bottom: 8px !important;   /* 이 값을 조절하여 불렛 포인트끼리만 간격을 띄웁니다 */
+    line-height: 1.4 !important;     /* 글자 자체의 행간 */
+    color: #DDDDDD;
+}
+
+/* 4. (참고) 사이드바 전체 요소 간의 물리적 간격 */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    gap: 0rem !important;           /* 블록 간의 기본 간격을 없애고 위 CSS 마진으로 제어합니다 */
+}
     .stImage { display: flex; justify-content: center; }
-
-    /* --- 사이드바 행간 최적화 (안전 버전) --- */
-    
-    /* 1. 사이드바 내 마크다운 블록 마진 초기화 (음수 마진 제거!) */
-    [data-testid="stSidebar"] .stMarkdown {
-        margin-bottom: 0px !important;
-    }
-
-    /* 2. 제목과 리스트 사이 여백 최소화 */
-    [data-testid="stSidebar"] h3 {
-        margin-bottom: 10px !important;
-        padding-bottom: 0 !important;
-        line-height: 1.2 !important;
-    }
-
-    /* 3. 불렛 포인트(li) 내부 간격 조정 */
-    [data-testid="stSidebar"] li {
-        margin-bottom: 2px !important; /* 살짝 띄워주는 게 가독성에 좋습니다 */
-        line-height: 1.2 !important;   /* 너무 좁으면 글자가 겹쳐 보여요 */
-        color: #DDDDDD;
-    }
-    
-    /* 4. 사이드바 요소들 사이의 수직 간격(Gap)을 아주 작게 설정 */
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0.2rem !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -176,10 +178,11 @@ with st.sidebar:
     selected_os = st.radio("OS 선택", options=["Android", "iOS"], index=0)
     
     st.divider()
-    st.markdown(f"### 📱 {selected_os} 상세 규격")
-    spec = OS_SPECS[selected_os]
-    st.write(f"- **권장 사이즈:** {spec['size'][0]}x{spec['size'][1]}px")
-    st.write(f"- **용량 제한:** 500KB 미만")
+    st.markdown(f"""
+    ### 📱 {selected_os} 상세 규격
+    - **권장 사이즈:** {spec['size'][0]}x{spec['size'][1]}px
+    - **용량 제한:** 500KB 미만
+    """)
 
 uploaded_file = st.file_uploader("시안 이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
 
