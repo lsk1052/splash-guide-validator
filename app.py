@@ -184,7 +184,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 4. 메인 UI
-st.title("Check mate")
+st.title("Check mate : 스플래시 가이드 체크")
 st.caption("UX/UI 디자인 품질 및 규격 수동 검수 도구")
 
 with st.sidebar:
