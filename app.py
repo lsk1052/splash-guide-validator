@@ -166,6 +166,20 @@ st.markdown("""
     gap: 0rem !important;           /* 블록 간의 기본 간격을 없애고 위 CSS 마진으로 제어합니다 */
 }
     .stImage { display: flex; justify-content: center; }
+
+/* --- [추가] 다크모드 고정 및 테마 변경 UI 제거 --- */
+    
+    /* 1. 우측 상단 햄버거 메뉴(설정) 전체 숨기기 */
+    #MainMenu {visibility: hidden;}
+    
+    /* 2. 헤더 영역 제거 (테마 변경 옵션 방지) */
+    header {visibility: hidden;}
+    
+    /* 3. 푸터(Made with Streamlit) 제거 */
+    footer {visibility: hidden;}
+
+    /* 4. 사이드바 내의 불필요한 여백 최적화 (기존 코드 유지) */
+    [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }    
     </style>
     """, unsafe_allow_html=True)
 
