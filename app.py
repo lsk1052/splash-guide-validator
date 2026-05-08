@@ -6,7 +6,7 @@ import numpy as np
 # 1. 페이지 설정
 st.set_page_config(
     page_title="Splash Check Mate",
-    page_icon="🧭",
+    page_icon="✅",
     layout="wide",
 )
 
