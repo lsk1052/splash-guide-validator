@@ -181,15 +181,21 @@ st.markdown("""
     /* 4. 사이드바 내의 불필요한 여백 최적화 (기존 코드 유지) */
     [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }
 
-    /* --- [추가된 부분] 사이드바 접기 버튼 제거 --- */
+    /* 1. 사이드바 내부의 접기 버튼(<<) 및 외부 펼치기 버튼(>) 모두 제거 */
+    [data-testid="stSidebarCollapseButton"], 
     [data-testid="collapsedControl"] {
-        display: none;
+        display: none !important;
     }
 
-    /* 사이드바가 항상 펼쳐진 상태로 고정되도록 여백 조정 */
+    /* 2. 사이드바 상단 여백 조절 (버튼이 사라진 자리가 비어 보일 수 있음) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        padding-top: 1rem !important;
+    }
+
+    /* 3. 사이드바 너비 고정 (기존 유지) */
     [data-testid="stSidebar"] {
-        min-width: 300px;
-        max-width: 300px;
+        min-width: 300px !important;
+        max-width: 300px !important;
     }
     </style>
     """, unsafe_allow_html=True)
