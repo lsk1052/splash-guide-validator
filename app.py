@@ -179,7 +179,12 @@ st.markdown("""
     footer {visibility: hidden;}
 
     /* 4. 사이드바 내의 불필요한 여백 최적화 (기존 코드 유지) */
-    [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }    
+    [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }
+
+    /* --- [추가된 부분] 사이드바 접기 버튼 제거 --- */
+    [data-testid="collapsedControl"] {
+        display: none;
+    }
     </style>
     """, unsafe_allow_html=True)
 
