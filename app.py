@@ -84,7 +84,7 @@ def apply_guide_overlay(image, os_name):
 # 3. 디자인 스타일 (CSS)
 st.markdown("""
     <style>
-    .stApp { background-color: #111111; color: #F2F2F2; }
+    .stApp { background-color: #111111; }
     h1, h2, h3, h4 { color: #FFFFFF !important; } 
     
     .check-pass { font-size: 1.5rem; font-weight: 800; color: #00E676; }
@@ -179,7 +179,8 @@ st.markdown("""
     footer {visibility: hidden;}
 
     /* 4. 사이드바 내의 불필요한 여백 최적화 (기존 코드 유지) */
-    [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }    
+    [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }
+
     </style>
     """, unsafe_allow_html=True)
 
