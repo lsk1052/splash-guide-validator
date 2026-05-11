@@ -86,7 +86,20 @@ st.markdown("""
     <style>
     /* --- 전체 배경 및 기본 텍스트 --- */
     .stApp { background-color: #111111; }
-    h1, h2, h3, h4 { color: #FFFFFF !important; } 
+    h1, h2, h3, h4 { color: #FFFFFF !important; }
+
+    /* [추가] 메인 화면 캡션 텍스트 (광고 스플래시 디자인...) */
+    .stCaption {
+        color: #FFFFFF !important;
+        opacity: 0.9; /* 살짝 투명도를 주어 세련되게 표현 */
+    }
+
+    /* [추가] 파일 업로더 라벨 (시안 이미지를 업로드하세요) */
+    /* 위젯 라벨 내의 p 태그를 직접 타겟팅합니다. */
+    [data-testid="stWidgetLabel"] p {
+        color: #FFFFFF !important;
+        font-weight: 500 !important;
+    }
     
     /* --- 검수 결과 관련 스타일 --- */
     .check-pass { font-size: 1.5rem; font-weight: 800; color: #00E676; }
