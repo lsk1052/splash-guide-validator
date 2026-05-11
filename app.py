@@ -88,9 +88,14 @@ st.markdown("""
     .stApp { background-color: #111111; }
     h1, h2, h3, h4 { color: #FFFFFF !important; }
 
-    /* [추가] 메인 화면 캡션 텍스트 (광고 스플래시 디자인...) */
-    .stCaption {
+/* [수정] 메인 화면 캡션 텍스트를 강제로 흰색 고정 */
+    /* div뿐만 아니라 내부의 모든 하위 요소까지 적용합니다. */
+    [data-testid="stCaptionContainer"], 
+    .stCaption, 
+    .stCaption div, 
+    .stCaption p {
         color: #FFFFFF !important;
+        opacity: 1 !important; /* 투명도 제거 */
     }
 
     /* [추가] 파일 업로더 라벨 (시안 이미지를 업로드하세요) */
