@@ -84,13 +84,16 @@ def apply_guide_overlay(image, os_name):
 # 3. 디자인 스타일 (CSS)
 st.markdown("""
     <style>
+    /* --- 전체 배경 및 기본 텍스트 --- */
     .stApp { background-color: #111111; }
     h1, h2, h3, h4 { color: #FFFFFF !important; } 
     
+    /* --- 검수 결과 관련 스타일 --- */
     .check-pass { font-size: 1.5rem; font-weight: 800; color: #00E676; }
     .check-fail { font-size: 1.5rem; font-weight: 800; color: #FF5252; }
     .status-text { font-size: 0.9rem; color: #AAAAAA; }
 
+    /* --- 중앙 가이드 컨테이너 --- */
     .guide-container {
         background-color: #1E1E1E;
         padding: 15px 25px;
@@ -137,61 +140,36 @@ st.markdown("""
         line-height: 1.2;
     }
 
-    /* --- 사이드바 상세 규격 영역 정밀 제어 --- */
-/* 2. [추가] 사이드바 배경을 메인과 동일하게 다크화 */
+    /* --- 사이드바 영역 정밀 제어 --- */
     [data-testid="stSidebar"] {
         background-color: #111111 !important;
-        border-right: 1px solid #333333; /* 메인과 구분되는 얇은 선 */
+        border-right: 1px solid #333333;
     }
-/* 2. 제목(h1) 및 캡션(Caption) 컬러 조정 */
-    h1 { color: #FFFFFF !important; }
-    .stCaption { color: #BBBBBB !important; font-size: 0.95rem !important; }
 
-/* 텍스트 컬러 수정 */
-[data-testid="stSidebar"] h3 { color: #FFFFFF !important; margin-bottom: 20px !important; }
-[data-testid="stSidebar"] li { color: #DDDDDD !important; margin-bottom: 8px !important; }
+    /* [중요] 사이드바 위젯 텍스트 컬러 (OS 선택, Android, iOS) */
+    /* 1. 위젯 타이틀 (예: OS 선택) */
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+        color: #FFFFFF !important;
+        font-size: 0.9rem !important;
+    }
     
-/* 1. 사이드바 마크다운 블록 사이의 기본 마진 최소화 */
-/* (이걸 0으로 둬야 아래에서 설정하는 개별 마진들이 정확하게 먹힙니다) */
-[data-testid="stSidebar"] .stMarkdown {
-    margin-bottom: 0px !important;
-}
+    /* 2. 라디오 버튼 항목 (예: Android, iOS) */
+    [data-testid="stSidebar"] .stRadio label {
+        color: #DDDDDD !important;
+    }
 
-/* 2. [타이틀과 리스트 사이] 간격 조정 */
-/* ### 📱 Android 상세 규격 바로 아래 여백입니다. */
-[data-testid="stSidebar"] h3 {
-    margin-bottom: 20px !important;  /* 이 값을 늘리면 타이틀과 첫 리스트 사이가 벌어집니다 */
-    padding-bottom: 0 !important;
-    line-height: 1.2 !important;
-}
-
-/* 3. [리스트 아이템들 간의] 간격 조정 */
-/* '권장 사이즈'와 '용량 제한' 사이의 여백입니다. */
-[data-testid="stSidebar"] li {
-    margin-bottom: 8px !important;   /* 이 값을 조절하여 불렛 포인트끼리만 간격을 띄웁니다 */
-    line-height: 1.4 !important;     /* 글자 자체의 행간 */
-    color: #DDDDDD;
-}
-
-/* 4. (참고) 사이드바 전체 요소 간의 물리적 간격 */
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 0rem !important;           /* 블록 간의 기본 간격을 없애고 위 CSS 마진으로 제어합니다 */
-}
-    .stImage { display: flex; justify-content: center; }
-
-/* --- [추가] 다크모드 고정 및 테마 변경 UI 제거 --- */
-    
-    /* 1. 우측 상단 햄버거 메뉴(설정) 전체 숨기기 */
-    #MainMenu {visibility: hidden;}
-    
-    /* 2. 헤더 영역 제거 (테마 변경 옵션 방지) */
-    header {visibility: hidden;}
-    
-    /* 3. 푸터(Made with Streamlit) 제거 */
-    footer {visibility: hidden;}
-
-    /* 4. 사이드바 내의 불필요한 여백 최적화 (기존 코드 유지) */
+    /* 사이드바 리스트 및 마크다운 조정 */
+    [data-testid="stSidebar"] h3 { color: #FFFFFF !important; margin-bottom: 20px !important; }
+    [data-testid="stSidebar"] li { color: #DDDDDD !important; margin-bottom: 8px !important; list-style-type: disc; }
     [data-testid="stSidebar"] .stMarkdown { margin-bottom: 0px !important; }
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0rem !important; }
+
+    /* --- 불필요한 UI 제거 --- */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    .stImage { display: flex; justify-content: center; }
 
     </style>
     """, unsafe_allow_html=True)
